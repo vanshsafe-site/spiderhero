@@ -4,7 +4,7 @@ type Building = { x: number; w: number; h: number; top: number; color: string };
 type Particle = { x: number; y: number; vx: number; vy: number; life: number };
 
 const GRAVITY = 0.55;
-const WEB_MAX = 350;
+const WEB_MAX = 520;
 const GROUND_MARGIN = 40;
 const GAME_W = 800;
 const GAME_H = 600;
@@ -60,7 +60,7 @@ export function SpiderGame() {
   const reset = useCallback(() => {
     const s = stateRef.current;
     s.px = 200;
-    s.py = 150;
+    s.py = 260;
     s.vx = 5;
     s.vy = 0;
     s.web = null;
@@ -247,8 +247,6 @@ export function SpiderGame() {
 
     const pushForward = () => {
       if (s.dead) return;
-      const spd = Math.hypot(s.vx, s.vy);
-      if (spd > STILL_SPEED) return; // only works while the spider is still
       s.vx += PUSH_BOOST;
       s.vy -= 1.5;
       for (let i = 0; i < 10; i++) {
@@ -363,7 +361,7 @@ export function SpiderGame() {
       setScore(s.score);
       setSpeed(Math.round(spd * 10));
       setCombo(s.combo);
-      setCanPush(spd <= STILL_SPEED);
+      setCanPush(true);
     };
 
     const die = () => {
@@ -588,14 +586,14 @@ export function SpiderGame() {
               pushRef.current();
             }}
             onContextMenu={(e) => e.preventDefault()}
-            disabled={!canPush || gameOver}
+            disabled={gameOver}
             className={`flex-1 select-none rounded-2xl px-8 py-4 text-base font-black text-white shadow-[0_0_20px_rgba(80,200,255,0.4)] transition touch-none ${
-              canPush && !gameOver
+              !gameOver
                 ? "bg-gradient-to-r from-cyan-500 to-blue-500 active:scale-95 active:shadow-[0_0_40px_rgba(80,200,255,0.8)]"
                 : "cursor-not-allowed bg-white/10 opacity-40"
             }`}
           >
-            👊 PUSH {canPush ? "" : "(only while still)"}
+            👊 PUSH
           </button>
 
           <button
@@ -614,7 +612,7 @@ export function SpiderGame() {
         <div className="grid w-full max-w-3xl grid-cols-2 gap-2 rounded-xl border border-purple-500/20 bg-white/5 p-3 text-xs sm:grid-cols-4 sm:text-sm">
           <Kbd label="Sling" desc="Tap button / Click / Tap screen" />
           <Kbd label="Release" desc="Tap again" />
-          <Kbd label="Push" desc="P key / button (only while still)" />
+          <Kbd label="Push" desc="P key / button (always usable)" />
           <Kbd label="Keyboard" desc="Space to sling / release" />
           <Kbd label="Restart" desc="R key or button" />
           <Kbd label="Music" desc="Toggle button (JS-generated synth)" />
@@ -647,7 +645,7 @@ export function SpiderGame() {
               <Section title="🕸️ Sling a Web">
                 Tap <b>TAP TO SLING</b>, tap the game area, click, or press{" "}
                 <b>Space</b> to fire a web at the nearest building within
-                350px and swing like a pendulum. Tap again to release.
+                reach and swing like a pendulum. Tap again to release.
               </Section>
               <Section title="⚡ Build Momentum">
                 Let gravity pull you down through the swing, then <b>release</b>{" "}
@@ -659,9 +657,9 @@ export function SpiderGame() {
                 ×9). Every successful attach adds bonus score.
               </Section>
               <Section title="👊 Push">
-                If you come to a stop with no web out, hit <b>PUSH</b> (or the{" "}
-                <b>P</b> key) to shove the spider forward and get moving
-                again.
+                Hit <b>PUSH</b> (or the <b>P</b> key) any time to shove the
+                spider forward — works whether you're stopped, swinging, or
+                mid-air.
               </Section>
               <Section title="🎵 Music">
                 Toggle the music button for a looping synth soundtrack,
@@ -716,11 +714,20 @@ function genBuildings(s: ReturnType<typeof stateShape>, aheadX: number) {
   const target = aheadX + s.w * 1.5;
   const palette = ["#3a1560", "#2a0f4a", "#4a1a70", "#20083a"];
   while (x < target) {
-    const gap = 60 + Math.random() * 140;
+    const gap = 50 + Math.random() * 90;
     x += gap;
     const w = 80 + Math.random() * 140;
-    // Tall skyscrapers: much higher range than before.
-    const h = 600 + Math.random() * 950;
+    // Mix of low, mid, and tall buildings for a natural varied skyline.
+    // Roll picks a band so we don't get an all-huge or all-tiny run.
+    const roll = Math.random();
+    let h: number;
+    if (roll < 0.3) {
+      h = 180 + Math.random() * 220; // low: 180-400
+    } else if (roll < 0.7) {
+      h = 400 + Math.random() * 400; // mid: 400-800
+    } else {
+      h = 800 + Math.random() * 500; // high: 800-1300
+    }
     const b: Building = {
       x,
       w,
@@ -803,4 +810,4 @@ function drawSpider(ctx: CanvasRenderingContext2D, x: number, y: number, angle: 
   ctx.fill();
   ctx.shadowBlur = 0;
   ctx.restore();
-}
+            }
